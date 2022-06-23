@@ -47,18 +47,30 @@ exports.deleteSession = async (user_id, session_id = '') => {
     }
 
     if (session_id != '') {
-        deleteSessionObj._id = session_id
-    }
 
-    await Session.deleteOne(deleteSessionObj)
-        .then(data => {
-            returnResponse.status = true
-            returnResponse.data = data.toJSON()
-        })
-        .catch(err => {
-            returnResponse.message = err.message
-            return returnResponse
-        })
+        deleteSessionObj._id = session_id
+
+        await Session.deleteOne(deleteSessionObj)
+            .then(data => {
+                returnResponse.status = true
+                returnResponse.data = data.toJSON()
+            })
+            .catch(err => {
+                returnResponse.message = err.message
+                return returnResponse
+            })
+    }
+    else {
+        await Session.deleteMany(deleteSessionObj)
+            .then(data => {
+                returnResponse.status = true
+                returnResponse.data = data.toJSON()
+            })
+            .catch(err => {
+                returnResponse.message = err.message
+                return returnResponse
+            })
+    }
 
     return returnResponse
 }

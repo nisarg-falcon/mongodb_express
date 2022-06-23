@@ -12,7 +12,6 @@ services:
     volumes:
       - ./src:/var/app/src
       - ./package.json:/var/app/package.json
-      - ./node_modules:/var/app/node_modules
     networks:
       - mongo_express_server
   mongo-db:
