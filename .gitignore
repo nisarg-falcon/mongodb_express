@@ -1,0 +1,4 @@
+node_modules/*
+mongodb/mongo_backup/*
+mongodb/.env
+.env

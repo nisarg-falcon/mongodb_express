@@ -1,0 +1,31 @@
+version: '3.8'
+
+services:
+  express-app:
+    depends_on:
+      - mongo-db
+    build: .
+    env_file:
+      - .env
+    ports:
+      - $PORT:$PORT
+    volumes:
+      - ./src:/var/app/src
+      - ./package.json:/var/app/package.json
+      - ./node_modules:/var/app/node_modules
+    networks:
+      - mongo_express_server
+  mongo-db:
+    image: mongo
+    container_name: mongo-db
+    env_file:
+      - ./mongodb/.env
+    ports:
+      - 27017:27017
+    volumes:
+      - ./mongodb/mongo_backup:/data/db
+      - ./mongodb/init-mongodb.js:/docker-entrypoint-initdb.d/mongo-init.js:ro
+    networks:
+      - mongo_express_server
+networks:
+  mongo_express_server:

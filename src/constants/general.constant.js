@@ -1,0 +1,1 @@
+exports.jwt_secret_key = 'N!s@rg#45'
