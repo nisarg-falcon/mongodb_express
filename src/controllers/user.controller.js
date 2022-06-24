@@ -4,39 +4,43 @@ const { createSession, deleteSession } = require('../services/session.service')
 
 const bcrypt = require('bcrypt')
 
+const computeError = (err) => {
+
+    const errors = {}
+
+    if (err.code = 11000) {
+        errors['user_name'] = 'Username is already registered'
+        return errors
+    }
+
+    if (err.message.includes('users validation failed')) {
+        Object.values(err.errors).forEach(({ properties }) => {
+            errors[properties.path] = properties.message
+        })
+    }
+
+    return errors
+}
+
 exports.registerUser = async (req, res) => {
     try {
-        if (!(req.body.user_name && req.body.password && req.body.first_name && req.body.last_name)) {
-            return res.send(_Error('Required Parameters Missing !'))
-        }
-
         const { user_name, password, first_name, last_name } = req.body;
 
-        const checkUserName = await User.findOne({ user_name })
+        const createUser = { user_name, password, first_name, last_name }
 
-        if (!checkUserName) {
-            const hashedPassword = await bcrypt.hash(password, 10)
+        // const newUser = new User(createUser
 
-            const createUser = {
-                user_name,
-                password: hashedPassword,
-                first_name,
-                last_name
-            }
+        await User.create(createUser)
+            .then(data => {
+                return res.send(_Success('Registeration Successfully !', data.toJSON()))
+            })
+            .catch(err => {
 
-            const newUser = new User(createUser)
+                const errors = computeError(err);
+                return res.send(_Error(err.message, errors))
 
-            await newUser.save()
-                .then(data => {
-                    return res.send(_Success('Registeration Successfully !', data.toJSON()))
-                })
-                .catch(err => {
-                    return res.send(_Error(err.message))
-                })
-        }
-        else {
-            return res.send(_Error('Username already exists', checkUserName))
-        }
+            })
+
     } catch (error) {
         return res.send(_Error(error.message))
     }
@@ -94,6 +98,35 @@ exports.getUserData = async (req, res) => {
     }
 }
 
+exports.updateUserData = async (req, res) => {
+    if (!(req.body.user_id)) {
+        return res.send(_Error('Require Parameters Missing !'))
+    }
+
+    const { user_id, first_name, last_name } = req.body
+
+    const getUser = await User.findById(user_id)
+
+    if (getUser) {
+        await User.updateOne({ user_id }, {
+            first_name: first_name ? first_name : getUser.first_name,
+            last_name: last_name ? last_name : getUser.last_name
+        })
+            .then(async data => {
+
+                const responseUser = await User.findById(user_id)
+
+                return res.send(_Success('User data updated !', responseUser))
+            })
+            .catch(err => {
+                return res.send(_Error(err.message))
+            })
+    }
+    else {
+        return res.send(_Error('Account deleted !'))
+    }
+}
+
 exports.deleteUser = async (req, res) => {
     if (!(req.body.user_id)) {
         return res.send(_Error('Require Parameters Missing !'))
@@ -108,6 +141,7 @@ exports.deleteUser = async (req, res) => {
         const logOutOfAllDevices = await deleteSession(user_id)
 
         if (logOutOfAllDevices.status) {
+
             await User.deleteOne({ _id: user_id })
                 .then(data => {
                     return res.send(_Success('Account deleted successfull !', data))
@@ -115,6 +149,7 @@ exports.deleteUser = async (req, res) => {
                 .catch(err => {
                     return res.send(_Error(err.message))
                 })
+
         }
         else {
             return res.send(_Error(logOutOfAllDevices.message))
@@ -127,6 +162,7 @@ exports.deleteUser = async (req, res) => {
 }
 
 exports.logoutUser = async (req, res) => {
+
     if (!(req.body.user_id)) {
         return res.send(_Error('Require Parameters Missing !'))
     }
